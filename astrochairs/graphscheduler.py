@@ -1,3 +1,5 @@
+__all__ = [make_graph, add_edges, Results, find_solution]
+
 import numpy as np
 import networkx as nx
 
@@ -192,7 +194,7 @@ class Results(object):
         self.all_weights.append(weights_sum_total)
         self.weights_sum_total = np.sum(self.all_weights)
 
-def find_groups_with_weights(G, n_elements, n_unused=None, results=None):
+def find_solution(G, n_elements, n_unused=None, results=None):
     """
     Sort nodes in G into groups of n_elements members such that 
     the total sum of weights is maximized. 
@@ -301,7 +303,7 @@ def find_groups_with_weights(G, n_elements, n_unused=None, results=None):
     
             ## if no unused nodes are left, return the selected groups,
             ## otherwise recurse
-            results = find_groups_with_weights(G_new, n_elements, n_unused, results)
+            results = find_solution(G_new, n_elements, n_unused, results)
             if results is not None:
                 if results.success:
                         return results
