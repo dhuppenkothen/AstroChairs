@@ -5,6 +5,10 @@ The code in this repository is designed to make
 the scheduling of parallel conference sessions easy 
 and avoid conflicts between sessions with similar topics.
 
+This is still a work in progress, so bugs and problems are likely.
+If you find one, please `get in touch via the issues
+<https://github.com/dhuppenkothen/astronomicalchairs/issues>`_!
+
 Authors
 --------
 * Daniela Huppenkothen (NYU CDS)
