@@ -1,6 +1,7 @@
-__all__ = [make_graph, add_edges, Results, find_solution]
+__all__ = ["make_graph", "add_edges", "Results", "find_solution"]
 
 import numpy as np
+import copy
 import networkx as nx
 
 def make_graph(node_ids, node_labels):
@@ -84,23 +85,22 @@ def add_edges(G, labels=None, hard_constraint=True, min_importance=0.1, max_impo
     ## find the total number of labels
     nlabels = len(labels)
 
-    ## get a list of lists of all session labels
-    session_labels = []
+    ## the total number of nodes
+    n_nodes = G.number_of_nodes()
+
+    ## get a list of lists of all node labels
+    node_labels = []
     for l in labels:
-        session_labels.append([G.node[i][l] for i in G.nodes()])
-    
-    ## the total number of sessions
-    nsessions = len(sessions)
+        node_labels.append([G.node[i][l] for i in G.nodes()])
     
     ## weights for the different attributes
-    weights = np.linspace(minweight, maxweight, nlabels)
+    weights = np.linspace(min_importance, max_importance, nlabels)
     
-    print("weights: " + str(weights))
     ## iterate over all the different possible labels 
-    for i, sl in enumerate(session_labels):
+    for i, sl in enumerate(node_labels):
         ## iterate over all nodes
-        for k in xrange(nsessions):
-            for l in xrange(nsessions):
+        for k, n1 in enumerate(G.nodes()):
+            for l, n2 in enumerate(G.nodes()):
                 ## if sessions have the same label, 
                 ## either make no node (for first label), 
                 ## or weaken a node that's already there
@@ -112,19 +112,19 @@ def add_edges(G, labels=None, hard_constraint=True, min_importance=0.1, max_impo
                             G[k][l]["weight"] *= weights[i-1]
                     else:
                         if i == 0:
-                            G.add_edge(sessions[k],sessions[l],weight=1.0)
+                            G.add_edge(n1,n2,weight=1.0)
                         else:
                             continue
            
                 else:
                     if sl[k] == sl[l]:
                         if i == 0:
-                            G.add_edge(sessions[k],sessions[l],weight=weights[0])
+                            G.add_edge(n1,n2,weight=weights[0])
                         else:
                             G[k][l]["weight"] *= weights[i]
                     else:
                         if i == 0:
-                            G.add_edge(sessions[k],sessions[l],weight=1.0)
+                            G.add_edge(n1,n2,weight=1.0)
                         else:
                             continue
     return G
