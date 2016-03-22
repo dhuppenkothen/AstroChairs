@@ -442,9 +442,8 @@ def find_solution_numerical(G, n_elements, n_unused=None, results=None):
     
     """
 
-    assert G.number_of_nodes() % np.float(n_elements) == 0, "Number of sessions must be " + \
-                                "an integer multiple of n_elements"
-
+    if G.number_of_nodes() % np.float(n_elements) == 0: 
+	print("Caution! Number of sessions is not an integer multiple of the number of parallel slots!")
 
     ## initialize results object
     if results is None:
@@ -506,6 +505,10 @@ def find_solution_numerical(G, n_elements, n_unused=None, results=None):
                 results.groups.pop(-1)
                 results.all_weights.pop(-1)
                 continue
+
+    # TODO: Need to add something here to figure out which sessions 
+    # have potentially been left out because the number of sessions wasn't 
+    # an integer multiple of the number of slots
 
     if len(results.groups) == 0:
         print("No solution found!")
