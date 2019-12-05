@@ -11,7 +11,7 @@ If you find one, please `get in touch via the issues
 
 Authors
 --------
-* Daniela Huppenkothen (NYU CDS)
+* Daniela Huppenkothen (UW DiRAC)
 
 Documentation
 -------------
@@ -28,7 +28,7 @@ Maybe later.
 Copyright
 ---------
 
-All content © 2015 the authors. The code is distributed under the MIT license.
+All content © 2019 the authors. The code is distributed under the MIT license.
 
 Pull requests are welcome! If you are interested in the further development of
 this project, please `get in touch via the issues
