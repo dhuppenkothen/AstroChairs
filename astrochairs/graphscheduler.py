@@ -29,6 +29,10 @@ def make_graph(node_ids, node_labels):
         corresponding labels, but no edges yet.
 
     """
+    for key in node_labels.keys():
+        assert len(node_ids) == len(node_labels[key]), \
+            "node_ids and topics for label %s "%key + \
+            "are not of equal length, but they should be!"
 
     G=nx.Graph()
     for i, nid in enumerate(node_ids):
@@ -38,8 +42,7 @@ def make_graph(node_ids, node_labels):
 
     return G
 
-def add_edges(G, labels=None, hard_constraint=True, min_importance=0.1,
-              max_importance=0.9):
+def add_edges(G, labels=None, hard_constraint=True, weights=None):
     """
     Add edges to the graph, with weights.
     Weights are determined by by the importance weights on
@@ -70,15 +73,16 @@ def add_edges(G, labels=None, hard_constraint=True, min_importance=0.1,
         `labels`, no edges will be drawn when this label is the same
         for two nodes.
 
-    min_importance : float
-        The minimum value for the set of importance values. The smaller
-        this value, the more important labels will be in the final model
-        The key property to consider is max_importance-min_importance, because
-        it sets the *relative* importance of the labels to each other.
+    weights : iterable of float (0, 1]
+        The relative weights of each category. By default, the weight of an
+        edge will be `weight=1`, adjusted by `weight[i]` for each pair of nodes
+        where the labels in category `i` are the same. If `hard_constraints==True`,
+        then edges between nodes for which labels in the first category are
+        the same do not exist, and `weights` should have length `len(labels)-1`.
+        If `hard_constraints == False`, then `len(weights)` should be `len(labels)`,
+        where the first entry is used to set the weight of an edge between two
+        nodes where `label[0]` has the same value.
 
-    max_importance: float
-        The maximum value for the set of importance values, the larger
-        this value, the smaller the importance of labels in the final model
 
     Returns
     -------
@@ -88,6 +92,17 @@ def add_edges(G, labels=None, hard_constraint=True, min_importance=0.1,
 
     # find the total number of labels
     nlabels = len(labels)
+
+    if weights is not None:
+        if hard_constraint:
+            assert nlabels-1 == len(weights), "Number of weights must correspond" \
+                                              "to the number of topics"
+        else:
+            assert nlabels == len(weights), "Number of weights must correspond" \
+                                        "to the number of topics"
+
+    else:
+        weights = np.ones(nlabels)
 
     # the total number of nodes
     n_nodes = G.number_of_nodes()
@@ -100,40 +115,55 @@ def add_edges(G, labels=None, hard_constraint=True, min_importance=0.1,
     for l in labels:
         node_labels.append([G.nodes()[i][l] for i in G.nodes()])
 
-    ## weights for the different attributes
-    weights = np.linspace(min_importance, max_importance, nlabels)
-
-    ## iterate over all the different possible labels
+    # TODO: Currently only works with two labels!
+    # iterate over all the different possible labels
     for i, sl in enumerate(node_labels):
-        ## iterate over all nodes
+        # iterate over all nodes
         for k, n1 in enumerate(G.nodes()):
             for l, n2 in enumerate(G.nodes()):
-                ## if sessions have the same label,
-                ## either make no node (for first label),
-                ## or weaken a node that's already there
+                #print("n1: " + str(n1))
+                #print("n2: " + str(n2))
+                # if sessions have the same label,
+                # either make no node (for first label),
+                # or weaken a node that's already there
+                if k == l:
+                    #print("k == l, continuing")
+                    continue
+                if k > l:
+                    #print("k > l, continuing")
+                    continue
+
                 if hard_constraint:
-                    if sl[k] == sl[l]:
-                        if i == 0 or G.nodes()[k][labels[0]] == G.nodes()[l][labels[0]]:
+                    print("using hard constraints")
+                    if i == 0:
+                        #print("First label")
+                        if G.nodes()[n1][labels[i]] == G.nodes()[n2][labels[i]]:
+                            #print("Labels are the same, continuing")
                             continue
                         else:
-                            G[k][l]["weight"] *= weights[i-1]
+                            #print("Making edge between %i and %i of weight %.2f"%(n1, n2, weights[i]))
+                            G.add_edge(n1, n2, weight=1.0)
                     else:
-                        if i == 0:
-                            G.add_edge(n1,n2,weight=max_importance)
+                        #print("Second pass")
+                        if G.nodes()[n1][labels[i]] == G.nodes()[n2][labels[i]]:
+                            #print("Labels are the same.")
+                            #print("Adjusting weight %.2f by %.2f"%(G[n1][n2]["weight"], weights[i]))
+                            G[n1][n2]["weight"] *= weights[i-1]
+                        else:
+                            #print("labels are not the same. Not doing anything.")
+                            continue
+                else:
+                    if i == 0:
+                        if G.nodes()[n1][labels[i]] == G.nodes()[n2][labels[i]]:
+                            G.add_edge(n1, n2, weight=weights[i])
+                        else:
+                            G.add_edge(n1, n2, weight=1.0)
+                    else:
+                        if G.nodes()[n1][labels[i]] == G.nodes()[n2][labels[i]]:
+                            G[n1][n2]["weight"] *= weights[i]
                         else:
                             continue
 
-                else:
-                    if sl[k] == sl[l]:
-                        if i == 0:
-                            G.add_edge(n1,n2,weight=weights[0])
-                        else:
-                            G[k][l]["weight"] *= weights[i]
-                    else:
-                        if i == 0:
-                            G.add_edge(n1,n2,weight=1.0)
-                        else:
-                            continue
     return G
 
 
@@ -229,7 +259,7 @@ def _sort_cliques_by_weights(G, cliques, n_elements):
         same descending order as cliques
 
     """
-    ## compute summed weights for all cliques:
+    # compute summed weights for all cliques:
     summed_weights = []
     for cl in cliques:
         ww = 0
@@ -242,9 +272,9 @@ def _sort_cliques_by_weights(G, cliques, n_elements):
 
         summed_weights.append(ww)
 
-    ## sort cliques from highest weight to smallest
+    # sort cliques from highest weight to smallest
     sorted_cliques = cliques[np.argsort(summed_weights)[::-1]]
-    ## sort weights in the same way
+    # sort weights in the same way
     summed_weights = np.sort(summed_weights)[::-1]
 
     return sorted_cliques, summed_weights
@@ -333,12 +363,12 @@ def find_solution(G, n_elements, n_unused=None, results=None):
         n_unused = G.number_of_nodes()
 
 
-    ## base case
+    # base case
     if n_unused == 0:
         results.success = True
         return results
 
-    ## recursion
+    # recursion
     else:
         ## find all cliques in the graph G
         cliques = list(nx.enumerate_all_cliques(G))
