@@ -182,6 +182,10 @@ def add_edges_numerical(G, edges, hard_constraint=True, threshold=0.5):
     G : networkx.Graph() instance
         The graph without edges
 
+    edges: iterable
+        An iterable of edges, in order of (k, l) occurrence, i.e. starts at
+        ((0,0), (0,1), (0,2), ..., (1, 2), (1, 3), ..., (n-1, n)).
+
     hard_constraint : bool
         Boolean flag determining whether hard constraints should be used.
         In this case, this means that for the first label specified in
@@ -214,7 +218,7 @@ def add_edges_numerical(G, edges, hard_constraint=True, threshold=0.5):
 
     for k, n1 in enumerate(G.nodes()):
         for l, n2 in enumerate(G.nodes()):
-            if k <= l:
+            if k >= l:
                 continue
             # if a hard constraint is set, make no edge
             # if the edge weight is smaller than `threshold`,
@@ -224,7 +228,7 @@ def add_edges_numerical(G, edges, hard_constraint=True, threshold=0.5):
                     i += 1
                     continue
                 else:
-                    G.add_edge(n1, n2, weight=1.0)
+                    G.add_edge(n1, n2, weight=edges[i])
             # otherwise just set all the weights the way they are
             else:
                 G.add_edge(n1,n2,weight=edges[i])
@@ -260,24 +264,36 @@ def _sort_cliques_by_weights(G, cliques, n_elements):
 
     """
     # compute summed weights for all cliques:
+
+    cliques = np.asarray(cliques)
+
     summed_weights = []
     for cl in cliques:
-        ww = 0
-        for i in range(n_elements):
-            for j in range(n_elements):
-                if i >= j:
-                    continue
-                else:
-                    ww += G[cl[i]][cl[j]]["weight"]
-
+        #print("cl: " + str(cl))
+        if len(cl) != n_elements:
+            ww = 0
+        else:
+            ww = 0
+            for i in range(n_elements):
+                #print("i: " + str(i))
+                for j in range(n_elements):
+                    #print("j: " + str(j))
+                    if i >= j:
+                        #print("i >= j, continuing")
+                        continue
+                    else:
+                        ww += G[cl[i]][cl[j]]["weight"]
+                        #print("ww_temp: " + str(ww))
+        #print("weight: " + str(ww))
         summed_weights.append(ww)
 
     # sort cliques from highest weight to smallest
     sorted_cliques = cliques[np.argsort(summed_weights)[::-1]]
     # sort weights in the same way
-    summed_weights = np.sort(summed_weights)[::-1]
+    #print("summed_weights: " + str(summed_weights))
 
-    return sorted_cliques, summed_weights
+    summed_weights = np.sort(summed_weights)[::-1]
+    return sorted_cliques[(summed_weights > 0)], summed_weights[(summed_weights > 0)]
 
 
 class Results(object):
@@ -287,6 +303,7 @@ class Results(object):
         self.groups = []
         self.all_weights = []
         self.success = True
+        self.weights_sum_total = 0
 
     def update_groups(self, groups):
         self.groups.append(groups)
