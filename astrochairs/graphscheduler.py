@@ -134,7 +134,7 @@ def add_edges(G, labels=None, hard_constraint=True, weights=None):
                     continue
 
                 if hard_constraint:
-                    print("using hard constraints")
+                    #print("using hard constraints")
                     if i == 0:
                         #print("First label")
                         if G.nodes()[n1][labels[i]] == G.nodes()[n2][labels[i]]:
@@ -146,9 +146,10 @@ def add_edges(G, labels=None, hard_constraint=True, weights=None):
                     else:
                         #print("Second pass")
                         if G.nodes()[n1][labels[i]] == G.nodes()[n2][labels[i]]:
-                            #print("Labels are the same.")
-                            #print("Adjusting weight %.2f by %.2f"%(G[n1][n2]["weight"], weights[i]))
-                            G[n1][n2]["weight"] *= weights[i-1]
+                            if (n1, n2) not in G.edges():
+                                continue
+                            else:
+                                G[n1][n2]["weight"] *= weights[i-1]
                         else:
                             #print("labels are not the same. Not doing anything.")
                             continue
