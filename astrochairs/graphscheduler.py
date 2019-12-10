@@ -45,8 +45,6 @@ def make_graph(node_ids, node_labels):
 def add_edges(G, labels=None, hard_constraint=True, weights=None):
     """
     Add edges to the graph, with weights.
-    Weights are determined by by the importance weights on
-    each label.
 
     If no order of labels is
     specified, then the order of keys in the dictionary
