@@ -83,7 +83,6 @@ def add_edges(G, labels=None, hard_constraint=True, weights=None):
         where the first entry is used to set the weight of an edge between two
         nodes where `label[0]` has the same value.
 
-
     Returns
     -------
     G : networkx.Graph() instance
@@ -548,7 +547,7 @@ def find_solution_numerical(G, n_elements, n_unused=None, results=None):
 
             ## if no unused nodes are left, return the selected groups,
             ## otherwise recurse
-            results = find_solution(G_new, n_elements, n_unused, results)
+            results = find_solution_numerical(G_new, n_elements, n_unused, results)
             if results is not None:
                 if results.success:
                         return results
